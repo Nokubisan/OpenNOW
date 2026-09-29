@@ -229,6 +229,10 @@ internal fun usesPlayStationRumbleCompatibility(
     preference: HapticsOutputPreference,
 ): Boolean = vibrationEnabled && preference == HapticsOutputPreference.Controller
 
+/** The touch UI already applies its configured dead zone; only bound the wire value here. */
+internal fun virtualStickAxis(value: Float): Float =
+    if (value.isFinite()) value.coerceIn(-1f, 1f) else 0f
+
 class NativeStreamClient(
     context: Context,
     private val lowLatencyGameAudio: Boolean,
@@ -2146,8 +2150,9 @@ class NativeStreamClient(
     }
 
     fun setVirtualLeftStickFromSource(sourceId: String, x: Float, y: Float) {
-        val scale = radialDeadzoneScale(x, y, deadzone = 0.08f)
-        val input = virtualLeftStickSources.update(sourceId, x * scale, y * scale)
+        // The touch surface already applied the user's joystick dead zone. Applying another
+        // fixed dead zone here makes small movements unresponsive even when it is set to zero.
+        val input = virtualLeftStickSources.update(sourceId, virtualStickAxis(x), virtualStickAxis(y))
         if (controllerMouseEmulationActive) {
             // Redirect left-stick input to mouse movement; keep virtual stick zeroed so the game
             // receives no stick deflection from the touch controller either.
@@ -2183,9 +2188,8 @@ class NativeStreamClient(
     }
 
     fun setVirtualRightStick(x: Float, y: Float) {
-        val scale = radialDeadzoneScale(x, y, deadzone = 0.08f)
-        val normalizedX = x * scale
-        val normalizedY = y * scale
+        val normalizedX = virtualStickAxis(x)
+        val normalizedY = virtualStickAxis(y)
         if (controllerMouseEmulationActive) {
             // Redirect right-stick input to scrolling; keep virtual stick zeroed.
             physicalRightStickX = normalizedX
@@ -4805,7 +4809,11 @@ class NativeStreamClient(
         InputDevice.getDeviceIds()
             .map(InputDevice::getDevice)
             .filterNotNull()
-            .filter(AndroidControllerInput::isControllerDevice)
+            // Unknown composite pads are admitted only after an actual controller event gave
+            // them a slot. Retain that live device during subsequent connection scans.
+            .filter { device ->
+                AndroidControllerInput.isControllerDevice(device) || device.id in controllerSlots
+            }
 
     private fun currentGamepadBitmap(controllerId: Int): Int {
         val connected = physicalControllerConnected ||

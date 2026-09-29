@@ -936,6 +936,11 @@
     <string name="settings_clear_cache_title">Clear game cache?</string>
     <string name="settings_connection_help">Connection help</string>
     <string name="settings_debug_logs_desc">Exports launch state, queue state, stream updates, recovery events, settings, codec capabilities, and recent sanitized CloudMatch JSON responses.</string>
+    <string name="settings_copy_logs">Copy logs</string>
+    <string name="settings_copied_logs">Copied logs</string>
+    <string name="settings_export_logs">Export logs</string>
+    <string name="settings_exported_logs">Exported</string>
+    <string name="login_export_logs_qr">Export logs with QR</string>
     <string name="settings_developer_label">Developer</string>
     <string name="settings_no_storage_addon">No persistent storage add-on is active for this account.</string>
     <string name="settings_release_notes">Release notes</string>

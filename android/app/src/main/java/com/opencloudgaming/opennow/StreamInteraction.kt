@@ -1092,22 +1092,28 @@ internal class TouchMouseState {
                     if (activePointerId >= 0) {
                         val index = event.findPointerIndex(activePointerId)
                         if (index >= 0) {
-                            moveVirtualCursorTo(
-                                streamPointForTouch(
-                                    touchX = event.getX(index),
-                                    touchY = event.getY(index),
-                                    viewWidth = width,
-                                    viewHeight = height,
-                                    streamWidth = streamWidth,
-                                    streamHeight = streamHeight,
-                                    stretchToFit = stretchToFit,
-                                    renderingAspectRatio = renderingAspectRatio,
-                                    presentationZoomScale = presentationZoomScale,
-                                    presentationTranslationX = presentationTranslationX,
-                                    presentationTranslationY = presentationTranslationY,
-                                ),
-                                client,
-                            )
+                            fun moveTo(x: Float, y: Float) {
+                                moveVirtualCursorTo(
+                                    streamPointForTouch(
+                                        touchX = x,
+                                        touchY = y,
+                                        viewWidth = width,
+                                        viewHeight = height,
+                                        streamWidth = streamWidth,
+                                        streamHeight = streamHeight,
+                                        stretchToFit = stretchToFit,
+                                        renderingAspectRatio = renderingAspectRatio,
+                                        presentationZoomScale = presentationZoomScale,
+                                        presentationTranslationX = presentationTranslationX,
+                                        presentationTranslationY = presentationTranslationY,
+                                    ),
+                                    client,
+                                )
+                            }
+                            for (historyIndex in 0 until event.historySize) {
+                                moveTo(event.getHistoricalX(index, historyIndex), event.getHistoricalY(index, historyIndex))
+                            }
+                            moveTo(event.getX(index), event.getY(index))
                         }
                     }
                     return true
@@ -1211,24 +1217,17 @@ internal class TouchMouseState {
                 }
                 val index = event.findPointerIndex(activePointerId)
                 if (index < 0) return true
-                val x = event.getX(index)
-                val y = event.getY(index)
-                val dx = x - lastX
-                val dy = y - lastY
-                if (
-                    doubleTapDragCandidate &&
-                    !selecting &&
-                    (abs(x - downX) > TOUCH_MOUSE_DRAG_START_SLOP_PX || abs(y - downY) > TOUCH_MOUSE_DRAG_START_SLOP_PX)
-                ) {
-                    selecting = client.setTouchMouseButton(true)
-                    doubleTapDragCandidate = false
-                    if (selecting) {
-                        NativeInputDiagnostics.add("touch double tap drag start")
-                    }
+                // Android may batch several positions into one MOVE. Use them in order so the
+                // cursor follows the finger instead of jumping straight to the newest position.
+                for (historyIndex in 0 until event.historySize) {
+                    processMove(
+                        event.getHistoricalX(index, historyIndex),
+                        event.getHistoricalY(index, historyIndex),
+                        event.getHistoricalEventTime(historyIndex),
+                        client,
+                    )
                 }
-                sendMouseDelta(dx, dy, event.eventTime, client)
-                lastX = x
-                lastY = y
+                processMove(event.getX(index), event.getY(index), event.eventTime, client)
                 return true
             }
             MotionEvent.ACTION_POINTER_UP -> {
@@ -1273,6 +1272,20 @@ internal class TouchMouseState {
         if (doubleTapDragCandidate) {
             lastTapTimeMs = Long.MIN_VALUE
         }
+    }
+
+    private fun processMove(x: Float, y: Float, eventTimeMs: Long, client: NativeStreamClient) {
+        if (
+            doubleTapDragCandidate && !selecting &&
+            (abs(x - downX) > TOUCH_MOUSE_DRAG_START_SLOP_PX || abs(y - downY) > TOUCH_MOUSE_DRAG_START_SLOP_PX)
+        ) {
+            selecting = client.setTouchMouseButton(true)
+            doubleTapDragCandidate = false
+            if (selecting) NativeInputDiagnostics.add("touch double tap drag start")
+        }
+        sendMouseDelta(x - lastX, y - lastY, eventTimeMs, client)
+        lastX = x
+        lastY = y
     }
 
     private fun finishPointer(event: MotionEvent, index: Int, client: NativeStreamClient) {

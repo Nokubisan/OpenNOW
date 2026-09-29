@@ -174,6 +174,28 @@ class InputEncoderGamepadTest {
     }
 
     @Test
+    fun gamepadEventsFromUnknownCompositePadsKeepTheirControllerRoute() {
+        val compositeSources = InputDevice.SOURCE_GAMEPAD or
+            InputDevice.SOURCE_JOYSTICK or InputDevice.SOURCE_TOUCHPAD or InputDevice.SOURCE_KEYBOARD
+        assertFalse(AndroidControllerInput.isControllerDevice(compositeSources, "Bluetooth HID Device"))
+        assertTrue(AndroidControllerInput.isControllerEvent(
+            InputDevice.SOURCE_GAMEPAD, compositeSources, "Bluetooth HID Device",
+        ))
+        assertTrue(AndroidControllerInput.isControllerEvent(
+            InputDevice.SOURCE_JOYSTICK, compositeSources, "Bluetooth HID Device",
+        ))
+        assertFalse(AndroidControllerInput.isControllerEvent(
+            InputDevice.SOURCE_KEYBOARD, compositeSources, "Bluetooth HID Device",
+        ))
+        assertFalse(AndroidControllerInput.isControllerEvent(
+            InputDevice.SOURCE_MOUSE, compositeSources, "Bluetooth HID Device",
+        ))
+        assertFalse(AndroidControllerInput.isControllerEvent(
+            InputDevice.SOURCE_GAMEPAD, compositeSources, "BT5.2 Mouse",
+        ))
+    }
+
+    @Test
     fun syntheticControllerEventsReuseTheLiveAndroidDeviceId() {
         val controllerSlots = linkedMapOf<Int, Int>()
         val assignment = AndroidControllerSlotRegistry.assign(

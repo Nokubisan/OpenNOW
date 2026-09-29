@@ -1809,7 +1809,11 @@ internal fun DebugLogsPanel(state: OpenNowUiState, viewModel: OpenNowViewModel) 
                 enabled = !diagnosticActionInProgress,
                 modifier = Modifier.weight(1f),
             ) {
-                Text(if (copied) "Copied logs" else "Copy logs", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    stringResource(if (copied) R.string.settings_copied_logs else R.string.settings_copy_logs),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
             OutlinedButton(
                 onClick = {
@@ -1836,7 +1840,11 @@ internal fun DebugLogsPanel(state: OpenNowUiState, viewModel: OpenNowViewModel) 
                 enabled = !diagnosticActionInProgress,
                 modifier = Modifier.weight(1f),
             ) {
-                Text(if (saved) "Exported" else "Export logs", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    stringResource(if (saved) R.string.settings_exported_logs else R.string.settings_export_logs),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }

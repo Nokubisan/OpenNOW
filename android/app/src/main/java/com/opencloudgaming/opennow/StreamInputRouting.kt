@@ -1226,10 +1226,21 @@ internal object AndroidControllerInput {
     fun isControllerEvent(source: Int, deviceId: Int): Boolean {
         val device = InputDevice.getDevice(deviceId)
         return if (device != null) {
-            isControllerDevice(device.sources or source, device.name)
+            isControllerEvent(source, device.sources, device.name)
         } else {
             hasControllerSource(source)
         }
+    }
+
+    internal fun isControllerEvent(source: Int, deviceSources: Int, deviceName: String?): Boolean {
+        // A composite pad can advertise a touchpad or mouse interface. Its actual gamepad
+        // event is stronger evidence than the device-wide source mask, which includes every
+        // interface. Keep mouse/keyboard events from unknown receivers on their own route.
+        if (hasControllerSource(source) &&
+            !hasExternalMouseSource(eventSource = source, deviceSources = 0) &&
+            (isKnownControllerName(deviceName) || !isClearlyNotController(deviceName))
+        ) return true
+        return isControllerDevice(deviceSources or source, deviceName)
     }
 
     fun isKnownControllerName(name: String?): Boolean {

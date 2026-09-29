@@ -44,6 +44,15 @@ class TouchOverlayLayoutTest {
     }
 
     @Test
+    fun zeroConfiguredDeadZoneKeepsSmallVirtualStickMovements() {
+        val smallMove = touchStickValue(deltaX = 4f, deltaY = 0f, maxTravel = 72f, deadZone = 0f)
+
+        assertTrue(virtualStickAxis(smallMove.x) > 0f)
+        assertEquals(smallMove.x, virtualStickAxis(smallMove.x), 0.0001f)
+        assertEquals(0f, virtualStickAxis(Float.NaN), 0.0001f)
+    }
+
+    @Test
     fun touchAimZoneMapsFingerTravelToRightStickRange() {
         val halfTravel = touchStickValue(deltaX = 36f, deltaY = -36f, maxTravel = 72f, deadZone = 0f)
         val beyondZone = touchStickValue(deltaX = 144f, deltaY = 0f, maxTravel = 72f, deadZone = 0f)
