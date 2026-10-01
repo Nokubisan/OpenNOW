@@ -1,0 +1,33 @@
+name: Build iOS IPA
+on:
+  workflow_dispatch:
+  push:
+    branches: ['kief5555/ios']
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use newest Xcode
+        run: |
+          XC=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XC"
+          xcodebuild -version
+      - name: Build unsigned
+        working-directory: ios/OpenNOWiOS
+        run: |
+          xcodebuild -project OpenNOWiOS.xcodeproj -scheme OpenNOWiOS \
+            -configuration Release -sdk iphoneos -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM=""
+      - name: Package IPA (widget extension removed)
+        working-directory: ios/OpenNOWiOS
+        run: |
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          mkdir Payload
+          cp -R "$APP" Payload/
+          rm -rf Payload/*.app/PlugIns
+          zip -qr OpenNOW.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenNOW-ipa
+          path: ios/OpenNOWiOS/OpenNOW.ipa
