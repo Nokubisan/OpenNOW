@@ -90,7 +90,11 @@ enum NativeStreamLaunchSettingsResolver {
 }
 
 enum NativeStreamCodecProbe {
-    static func report() -> NativeStreamCodecReport {
+    private static let cachedReport: NativeStreamCodecReport = computeReport()
+
+    static func report() -> NativeStreamCodecReport { cachedReport }
+
+    private static func computeReport() -> NativeStreamCodecReport {
         let supportedWebRTCCodecs = webRTCSupportedCodecs()
         let capabilities = NativeStreamVideoCodec.allCases.map { codec in
             NativeStreamCodecCapability(
