@@ -31,3 +31,4 @@ jobs:
         with:
           name: OpenNOW-ipa
           path: ios/OpenNOWiOS/OpenNOW.ipa
+          
